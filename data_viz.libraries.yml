@@ -1,0 +1,16 @@
+data_viz:
+  version: 1.x
+  css:
+    component:
+      css/kinship.css: {}
+  js:
+    js/forceDirected.js: {}
+    js/d3-dag.min.js: {}
+    js/kinshipDiagram.js: {}
+    js/d3.v4.min.js: {}
+    js/dataviz.js: {}
+    js/d3-tip.min.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupalSettings
+    - core/jquery.once

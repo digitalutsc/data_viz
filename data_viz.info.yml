@@ -1,0 +1,7 @@
+name: "data_viz"
+type: module
+description: "DataViz"
+core_version_requirement: "^8.8 || ^9"
+package: "Custom"
+libraries:
+  - "data_viz"

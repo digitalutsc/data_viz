@@ -1,0 +1,7 @@
+field.formatter.settings.data_viz_default:
+  type: mapping
+  label: "data_viz_default text length"
+  mapping:
+    text_length:
+      type: string
+      label: "Text Length"

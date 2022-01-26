@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Implemented hooks for the data_viz module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function data_viz_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.data_viz':
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('A file field formatter that renders JSON files as Network or Kinship Diagram.').'</p>';
+      return $output;
+  }
+}
