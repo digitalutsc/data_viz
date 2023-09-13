@@ -40,11 +40,12 @@
         .once()
         .each(function () {
           $(".js-var").first().empty().append('<div id="viz"></div>');
-
-          if (settings.data_viz.type == "Network")
+          if (settings.data_viz.type == "Network") {
             showNetworkDiagram(settings.data_viz.path);
-          else if (settings.data_viz.type == "Kinship")
+          }
+          else if (settings.data_viz.type == "Kinship") {
             showKinshipDiagram(settings.data_viz.path);
+          }
         });
     },
   };
