@@ -71,7 +71,7 @@ class NetworkFormatter extends FileFormatterBase {
     if (!$items->isEmpty()) {
       foreach ($this->getEntitiesToView($items, $langcode) as $delta => $file) {
         $uri = $file->getFileUri();
-        $url = file_create_url($uri);
+        $url = \Drupal::service('file_url_generator')->generateAbsoluteString($uri);
         $element[$delta] = $this->addJsVar();
       }
       $element['#attached']['library'][] = 'data_viz/data_viz';
