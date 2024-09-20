@@ -2,7 +2,8 @@
 // copied from https://stackoverflow.com/a/3955096/12267732
 // https://stackoverflow.com/questions/60107431/d3-tree-with-collapsing-boxes-using-d3-version-4
 // https://stackoverflow.com/questions/950087/how-do-i-include-a-javascript-file-in-another-javascript-file
-
+// how to get panning/zooming to go to a specific node
+// https://stackoverflow.com/questions/39688256/force-layout-zoom-resets-on-first-tick-of-dragging-or-zomming/39689877#39689877
 function showKinshipDiagram(treeData) {
   function drawDiagram(url, callback) {
     // Adding the script tag to the head as suggested before
@@ -83,7 +84,8 @@ function showKinshipDiagram(treeData) {
           y_sep = 40;
 
         // initialize panning, zooming
-        let zoom = d3.zoom()
+        const zoom = d3.zoom()
+        .scaleExtent([0.1, 3])
         .on("zoom", function() {
             g.attr("transform", d3.event.transform);
         });
@@ -157,21 +159,15 @@ function showKinshipDiagram(treeData) {
           .layering(d3.layeringLongestPath())
           // .nodeSize([40, 100])
           .nodeSize([y_sep, x_sep])
-          .coord(d3.coordQuad().linkCurve(1).nodeCurve(1).vertStrong(0).vertWeak(1));
+          .coord(d3.coordGreedy());
+          // .coord(d3.coordQuad().linkCurve(1).nodeCurve(1).vertStrong(0).vertWeak(1));
           // .gap([0.1, 0.1]);
           // removed separation as its no longer supported in d3-dag v1.1
 
 
         // make dag from edge list
         dag = d3.graphConnect()(data.links); // this used to be d3.dagConnect() but it's now d3.graphConnect()
-        // for (const node of dag.nodes()) {
-        //   console.log(node..children_copy);
-        // }
-        // console.log(data.persons);
-        // console.log(data.unions);
-        // for (const link of dag.links()) {
-        //   console.log(link.data);
-        // }
+
 
         // in order to make the family tree work, the dag
         // must be a node with id undefined. create that node if
@@ -185,11 +181,11 @@ function showKinshipDiagram(treeData) {
 
         // prepare node data
         // dag.nodes() returns a generator so we need to convert it to an array
+        let root = null;
         var all_nodes = Array.from(dag.nodes()); // was dag.descendants but based on var name presuming it's all nodes
         all_nodes.forEach((n) => {
           n.id = n.data;
           n.data = data.persons[n.id] ? data.persons[n.id] : data.unions[n.id];
-          // console.log("initial node children, ", n.children_copy);
           n._children = [ ...n.children() ]; // all nodes collapsed by default
           n.children_copy = [];
           n.inserted_nodes = [];
@@ -197,15 +193,17 @@ function showKinshipDiagram(treeData) {
           n.neighbors = [];
           n.visible = false;
           n.inserted_connections = [];
+          // slight optimization to avoid looping twice
+          if (n.id === data.start) {
+            root = n;
+          }
         });
 
         // find root node and assign data
-        // console.log(all_nodes);
-        // console.log(data.start);
-        root = all_nodes.find((n) => n.id == data.start);
-        // console.log(root);
-        root.visible = true;
-        root.neighbors = getNeighbors(root);
+        if (root) {
+          root.visible = true;
+          root.neighbors = getNeighbors(root);
+        }
 
         // find root node for kinship 1,2,3
         if (data.start == kinDiagram1) {
@@ -241,9 +239,7 @@ function showKinshipDiagram(treeData) {
         dag.children_copy = [root];
 
         // draw dag, expand different layouts for different diagram
-        // console.log("root: ", root);
         uncollapse(root);
-        // console.log("data.start, ", data.start);
         for (const nodeId of startExpanded) {
           uncollapse(all_nodes.find((n) => n.id == nodeId));
         }
@@ -257,12 +253,13 @@ function showKinshipDiagram(treeData) {
         if (data.start == kinDiagram3) {
           uncollapseFor3();
         }
-        console.log("root y0: ", root.y0, "root x0: ", root.x0, "y_sep: ", y_sep, "x_sep: ", x_sep, "root + y_sep: ", -root.y0 + y_sep, "root + x_sep: ", -root.x0 + x_sep);
         update(root);
-        console.log("root y0: ", root.y0, "root x0: ", root.x0, "y_sep: ", y_sep, "x_sep: ", x_sep, "root + y_sep: ", -root.y0 + y_sep, "root + x_sep: ", -root.x0 + x_sep);
-        g.transition()
-        .duration(750)
-        .attr("transform", `translate(${-root.y0+y_sep}, ${-root.x0+x_sep}) scale(1)`); 
+
+        const transform = d3.zoomIdentity
+          .translate(-root.y0+y_sep, -root.x0+x_sep)
+          .scale(1);
+        svg.call(zoom.transform, transform);
+
         function uncollapseFor1() {
           uncollapse(all_nodes.find((n) => n.id == "I0087"));
 
@@ -290,7 +287,6 @@ function showKinshipDiagram(treeData) {
 
         // collapse a node
         function collapse(d) {
-          // console.log("collapsing: ", d);
           d.neighbors = getNeighbors(d);
           // remove root nodes and circle-connections
           var remove_inserted_root_nodes = (n) => {
@@ -313,34 +309,27 @@ function showKinshipDiagram(treeData) {
           remove_inserted_root_nodes(d);
 
           // collapse neighbors which are visible and have been inserted by this node
-          var vis_inserted_neighbors = d.neighbors.filter(
-            (n) => n.visible && d.inserted_nodes.includes(n)
-          );
-          // console.log("fresh get of neighbours: ", getNeighbors(d));
-          // console.log("neibhours of the node: ", d.neighbors);
-          // console.log("neighbours visibility: ", d.neighbors.forEach((n) => console.log(n.visible)));
-          // console.log("inserted nodes: ", d.inserted_nodes);
-          // console.log("original node is ", d);
-          vis_inserted_neighbors.forEach((n) => {
-            // console.log("collapsing: ", n);
-            // tag invisible
-            n.visible = false;
-            // if child, delete connection
-            if (d.children_copy.includes(n)) {
-              d._children.push(n);
-              d.children_copy.remove(n);
+          d.neighbors.forEach((n) => {
+            if (n.visible && d.inserted_nodes.includes(n)) {
+              // tag invisible
+              n.visible = false;
+              // if child, delete connection
+              if (d.children_copy.includes(n)) {
+                d._children.push(n);
+                d.children_copy.remove(n);
+              }
+              // if parent, delete connection
+              if (n.children_copy.includes(d)) {
+                n._children.push(d);
+                n.children_copy.remove(d);
+              }
+              // if union, collapse the union
+              if (n.data.isUnion) {
+                collapse(n);
+              }
+              // remove neighbor handle from clicked node
+              d.inserted_nodes.remove(n);
             }
-            // if parent, delete connection
-            if (n.children_copy.includes(d)) {
-              n._children.push(d);
-              n.children_copy.remove(d);
-            }
-            // if union, collapse the union
-            if (n.data.isUnion) {
-              collapse(n);
-            }
-            // remove neighbor handle from clicked node
-            d.inserted_nodes.remove(n);
           });
         }
 
@@ -369,7 +358,7 @@ function showKinshipDiagram(treeData) {
                 n.children_copy.push(d);
                 n._children.remove(d);
                 // insert root nodes if flag is set
-                if (make_roots & !d.inserted_roots.includes(n)) {
+                if (make_roots && !d.inserted_roots.includes(n)) {
                   d.inserted_roots.push(n);
                 }
               }
@@ -404,55 +393,49 @@ function showKinshipDiagram(treeData) {
 
         // uncollapse a node
         function uncollapse(d, make_roots) {
-          // console.log("uncollapsing: ", d);
           if (d == undefined) return;
           // neighbor nodes that are already visible (happens when
           // circles occur): make connections, save them to
           // destroy / rebuild on collapse
           d.neighbors = getNeighbors(d);
-          var extended_neighbors = d.neighbors.filter((n) => n.visible);
-          // console.log("Total extended neighbours: ", extended_neighbors.length + "\nextended neighbors: ", extended_neighbors);
-          extended_neighbors.forEach((n) => {
-            // if child, make connection
-            if (d._children.includes(n)) {
-              d.inserted_connections.push([d, n]);
-            }
-            // if parent, make connection
-            if (n._children.includes(d)) {
-              d.inserted_connections.push([n, d]);
-            }
-          });
-
-          // neighbor nodes that are invisible: make visible, make connections,
-          // add root nodes, add to inserted_nodes
-          var collapsed_neighbors = d.neighbors.filter((n) => !n.visible);
-          // console.log("Total collapsed neighbours: ", collapsed_neighbors.length + "\ncollapsed neighbors: ", collapsed_neighbors);
-          collapsed_neighbors.forEach((n) => {
-            // collect neighbor data
-            n.neighbors = getNeighbors(n);
-            // tag visible
-            n.visible = true;
-            // if child, make connection
-            if (d._children.includes(n)) {
-              d.children_copy.push(n);
-              d._children.remove(n);
-            }
-            // if parent, make connection
-            if (n._children.includes(d)) {
-              n.children_copy.push(d);
-              n._children.remove(d);
-              // insert root nodes if flag is set
-              if (make_roots & !d.inserted_roots.includes(n)) {
-                d.inserted_roots.push(n);
+          // compress extended and collapsed neighbors into one loop for optimization
+          d.neighbors.forEach((n) => {
+            if (n.visible) {
+              if (d._children.includes(n)) {
+                d.inserted_connections.push([d, n]);
+              }
+              // if parent, make connection
+              if (n._children.includes(d)) {
+                d.inserted_connections.push([n, d]);
               }
             }
-            // if union, uncollapse the union
-            if (n.data?.isUnion) {
-              // console.log("uncollapsing union: ", n);
-              uncollapse(n, true);
+            else {
+              // neighbor nodes that are invisible: make visible, make connections,
+              // add root nodes, add to inserted_nodes
+              n.neighbors = getNeighbors(n);
+              // tag visible
+              n.visible = true;
+              // if child, make connection
+              if (d._children.includes(n)) {
+                d.children_copy.push(n);
+                d._children.remove(n);
+              }
+              // if parent, make connection
+              if (n._children.includes(d)) {
+                n.children_copy.push(d);
+                n._children.remove(d);
+                // insert root nodes if flag is set
+                if (make_roots & !d.inserted_roots.includes(n)) {
+                  d.inserted_roots.push(n);
+                }
+              }
+              // if union, uncollapse the union
+              if (n.data?.isUnion) {
+                uncollapse(n, true);
+              }
+              // save neighbor handle in clicked node
+              d.inserted_nodes.push(n); 
             }
-            // save neighbor handle in clicked node
-            d.inserted_nodes.push(n);
           });
 
           // make sure this step is done only once
@@ -460,8 +443,6 @@ function showKinshipDiagram(treeData) {
             var add_root_nodes = (n) => {
               // add previously inserted root nodes (partners, parents)
               // this line is throwing too much recursion
-              // console.log("inserted roots: ", n.inserted_roots);
-              // console.log("dag children: ", dag.children_copy);
               n.inserted_roots.forEach((p) => dag.children_copy.push(p));
               // add previously inserted connections (circles)
               n.inserted_connections.forEach((arr) => {
@@ -487,13 +468,9 @@ function showKinshipDiagram(treeData) {
           if (error) throw error;
           if (node.data?.isUnion) {
             let temp = getChildren(node).concat(getPartners(node));
-            // console.log("logging union neighbours");
-            // console.log(temp);
             return temp;
           } else {
             let temp = getOwnUnions(node).concat(getParentUnions(node));
-            // console.log("logging else neighbours");
-            // console.log(temp);
             return temp;
           }
         }
@@ -559,13 +536,9 @@ function showKinshipDiagram(treeData) {
 
         function getChildren(node) {
           let children = [];
-          // console.log("node: ", node);
-          // console.log("node children: ", node.children_copy);
-          // console.log("initial children: ", children);
           if (node.data?.isUnion) {
             node.children_copy = [ ...node.children() ];
             children = node.children_copy;
-            // console.log("children if true: ", children);
           } else {
             node.data.own_unions = getOwnUnions(node);
             node.data.own_unions.forEach(
@@ -573,7 +546,6 @@ function showKinshipDiagram(treeData) {
             );
           }
           // sort children by birth year, filter undefined
-          // console.log(children);
           children = children
             .filter((c) => c != undefined)
             .sort((a, b) =>
@@ -613,7 +585,9 @@ function showKinshipDiagram(treeData) {
 
         function update(source) {
           // Assigns the x and y position for the nodes
+          console.time("tree");
           tree(dag);
+          console.timeEnd("tree");
 
           
 
@@ -841,18 +815,15 @@ function showKinshipDiagram(treeData) {
           function click(d) {
             // do nothing if node is union
             if (d.data.isUnion) {
-              // console.log("clicked and doing nothing on ", d);
               return
             }
 
             // uncollapse if there are uncollapsed unions / children / partners
             if (is_extendable(d)) {
-              // console.log("clicked and uncollapsing on ", d);
               uncollapse(d);
              }
             // collapse if fully uncollapsed
             else {
-              // console.log("clicked and collapsing on ", d);
               collapse(d);
             }
 
@@ -861,9 +832,13 @@ function showKinshipDiagram(treeData) {
           
           
             // Apply the transformation to the g element
-            g.transition()
-               .duration(750)
-               .attr("transform", `translate(${-y+textY}, ${-x+textX}) scale(1)`);
+            const transform = d3.zoomIdentity
+            .translate(-y+textY, -x+textX)
+            .scale(1);
+            svg.call(zoom.transform, transform);
+            // g.transition()
+            //    .duration(750)
+            //    .attr("transform", `translate(${-y+textY}, ${-x+textX}) scale(1)`);
             update(d);
           }
         }
