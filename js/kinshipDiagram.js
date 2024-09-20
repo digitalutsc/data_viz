@@ -83,11 +83,12 @@ function showKinshipDiagram(treeData) {
           y_sep = 40;
 
         // initialize panning, zooming
-        var zoom = d3
-          .zoom()
-          .on("zoom", (_) =>
-            g.attr("transform", d3.event.transform.scale(0.7))
-          );
+        let zoom = d3.zoom()
+        .on("zoom", function() {
+            g.attr("transform", d3.event.transform);
+        });
+
+    
 
         // initialize tooltips
         var tip = d3
@@ -256,8 +257,12 @@ function showKinshipDiagram(treeData) {
         if (data.start == kinDiagram3) {
           uncollapseFor3();
         }
+        console.log("root y0: ", root.y0, "root x0: ", root.x0, "y_sep: ", y_sep, "x_sep: ", x_sep, "root + y_sep: ", -root.y0 + y_sep, "root + x_sep: ", -root.x0 + x_sep);
         update(root);
-
+        console.log("root y0: ", root.y0, "root x0: ", root.x0, "y_sep: ", y_sep, "x_sep: ", x_sep, "root + y_sep: ", -root.y0 + y_sep, "root + x_sep: ", -root.x0 + x_sep);
+        g.transition()
+        .duration(750)
+        .attr("transform", `translate(${-root.y0+y_sep}, ${-root.x0+x_sep}) scale(1)`); 
         function uncollapseFor1() {
           uncollapse(all_nodes.find((n) => n.id == "I0087"));
 
@@ -610,6 +615,8 @@ function showKinshipDiagram(treeData) {
           // Assigns the x and y position for the nodes
           tree(dag);
 
+          
+
 
           let nodes = Array.from(dag.nodes()).filter((n) => n.visible);
           let links = Array.from(dag.links()).filter((n) => n.source.visible && n.target.visible);
@@ -805,15 +812,15 @@ function showKinshipDiagram(treeData) {
 
           // expanding a big subgraph moves the entire dag out of the window
           // to prevent this, cancel any transformations in y-direction
-          svg
-            .transition()
-            .duration(duration)
-            .call(
-              zoom.transform,
-              d3
-                .zoomTransform(g.node())
-                .translate(-(source.y - source.y0), -(source.x - source.x0))
-            );
+          // svg
+          //   .transition()
+          //   .duration(duration)
+          //   .call(
+          //     zoom.transform,
+          //     d3
+          //       .zoomTransform(g.node())
+          //       .translate(-(source.y - source.y0), -(source.x - source.x0))
+          //   );
 
           // Store the old positions for transition.
           nodes.forEach(function (d) {
@@ -834,21 +841,29 @@ function showKinshipDiagram(treeData) {
           function click(d) {
             // do nothing if node is union
             if (d.data.isUnion) {
-              console.log("clicked and doing nothing on ", d);
+              // console.log("clicked and doing nothing on ", d);
               return
             }
 
             // uncollapse if there are uncollapsed unions / children / partners
             if (is_extendable(d)) {
-              console.log("clicked and uncollapsing on ", d);
+              // console.log("clicked and uncollapsing on ", d);
               uncollapse(d);
              }
             // collapse if fully uncollapsed
             else {
-              console.log("clicked and collapsing on ", d);
+              // console.log("clicked and collapsing on ", d);
               collapse(d);
             }
 
+            const x = d.x;
+            const y = d.y;
+          
+          
+            // Apply the transformation to the g element
+            g.transition()
+               .duration(750)
+               .attr("transform", `translate(${-y+textY}, ${-x+textX}) scale(1)`);
             update(d);
           }
         }
