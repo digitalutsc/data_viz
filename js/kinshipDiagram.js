@@ -68,12 +68,6 @@ function showKinshipDiagram(treeData) {
         var screen_width = 1120,
           screen_height = 700;
 
-        var kinDiagram1 = "I0086",
-          kinDiagram2 = "I0163",
-          kinDiagram3 = "I0117";
-        (kinDiagram3_2 = "I0500"),
-          (kinDiagram3_3 = "I0504"),
-          (kinDiagram3_4 = "I0505");
 
         var rectHeight = 35,
           rectWidth = 123;
@@ -164,10 +158,9 @@ function showKinshipDiagram(treeData) {
           // .nodeSize([40, 140])
           .nodeSize([y_sep, x_sep])
           // .decross(d3.decrossDfs())
-          .coord(d3.coordGreedy());
+          .coord(d3.coordGreedy()); // using greedy here as quad takes a ridiculous amount of time
           // .gap([1, 1]);
           // .coord(d3.coordQuad().linkCurve(1).nodeCurve(1).vertStrong(0).vertWeak(1));
-          // .gap([0.1, 0.1]);
           // removed separation as its no longer supported in d3-dag v1.1
 
 
@@ -211,35 +204,6 @@ function showKinshipDiagram(treeData) {
           root.neighbors = getNeighbors(root);
         }
 
-        // find root node for kinship 1,2,3
-        if (data.start == kinDiagram1) {
-          // root.x0 = screen_width * 0.35;
-          // root.y0 = screen_height * 0.6;
-
-          // For ticket #9413
-          root.x0 = screen_width * 0.55;
-          root.y0 = screen_height * 0.2;
-        }
-        if (data.start == kinDiagram2) {
-          root.x0 = screen_width * 0.59;
-          root.y0 = screen_height * 0.6;
-        }
-        if (data.start == kinDiagram3) {
-          root.x0 = screen_width * 0.45;
-          root.y0 = screen_height * 0.6;
-        }
-        if (data.start == kinDiagram3_2) {
-          root.x0 = screen_width * 0.1;
-          root.y0 = screen_height * 0.5;
-        }
-        if (data.start == kinDiagram3_3) {
-          root.x0 = screen_width * 0.1;
-          root.y0 = screen_height * 0.6;
-        }
-        if (data.start == kinDiagram3_4) {
-          root.x0 = screen_width * 0.1;
-          root.y0 = screen_height * 0.6;
-        }
 
         if (startXModifier != -1) {
           root.x0 = startXModifier;
@@ -260,15 +224,7 @@ function showKinshipDiagram(treeData) {
           uncollapseById(all_nodes.find((n) => n.id == pair[0]), undefined, pair[1]);
         }
 
-        if (data.start == kinDiagram1) {
-          // uncollapseFor1();
-        }
-        if (data.start == kinDiagram2) {
-          uncollapseFor2();
-        }
-        if (data.start == kinDiagram3) {
-          uncollapseFor3();
-        }
+
         update(root);
 
         const transform = d3.zoomIdentity
@@ -276,30 +232,7 @@ function showKinshipDiagram(treeData) {
           .scale(1);
         svg.call(zoom.transform, transform);
 
-        function uncollapseFor1() {
-          uncollapse(all_nodes.find((n) => n.id == "I0087"));
 
-          //uncollapse(all_nodes.find(n => n.id == "I0079"));
-          // For ticket #9413, unique implementation of uncollapse function for Natalie requested to showing Marcantonio's two wifes
-          uncollapseById(all_nodes.find((n) => n.id == "I0079"), undefined, "F0031");
-
-          uncollapse(all_nodes.find((n) => n.id == "I0081"));
-          uncollapse(all_nodes.find((n) => n.id == "I0102"));
-        }
-
-        function uncollapseFor2() {
-          uncollapse(all_nodes.find((n) => n.id == "I0152"));
-          uncollapse(all_nodes.find((n) => n.id == "I0091"));
-          uncollapse(all_nodes.find((n) => n.id == "I0079"));
-        }
-
-        function uncollapseFor3() {
-          uncollapse(all_nodes.find((n) => n.id == "I0096"));
-
-          uncollapse(all_nodes.find((n) => n.id == "I0125"));
-          uncollapse(all_nodes.find((n) => n.id == "I0477"));
-          uncollapse(all_nodes.find((n) => n.id == "I0386"));
-        }
 
         // collapse a node
         function collapse(d) {
@@ -601,9 +534,7 @@ function showKinshipDiagram(treeData) {
 
         function update(source) {
           // Assigns the x and y position for the nodes
-          console.time("tree");
           tree(dag);
-          console.timeEnd("tree");
 
           
 
@@ -800,18 +731,6 @@ function showKinshipDiagram(treeData) {
             })
             .remove();
 
-          // expanding a big subgraph moves the entire dag out of the window
-          // to prevent this, cancel any transformations in y-direction
-          // svg
-          //   .transition()
-          //   .duration(duration)
-          //   .call(
-          //     zoom.transform,
-          //     d3
-          //       .zoomTransform(g.node())
-          //       .translate(-(source.y - source.y0), -(source.x - source.x0))
-          //   );
-
           // Store the old positions for transition.
           nodes.forEach(function (d) {
             d.x0 = d.x;
@@ -958,5 +877,4 @@ function showKinshipDiagram(treeData) {
     */
       });
     });
-  //.catch((error) => console.log(error));
 }
