@@ -213,8 +213,8 @@ function showKinshipDiagram(treeData) {
 
         // find root node for kinship 1,2,3
         if (data.start == kinDiagram1) {
-          //root.x0 = screen_width * 0.35;
-          //root.y0 = screen_height * 0.6;
+          // root.x0 = screen_width * 0.35;
+          // root.y0 = screen_height * 0.6;
 
           // For ticket #9413
           root.x0 = screen_width * 0.55;
@@ -261,7 +261,7 @@ function showKinshipDiagram(treeData) {
         }
 
         if (data.start == kinDiagram1) {
-          uncollapseFor1();
+          // uncollapseFor1();
         }
         if (data.start == kinDiagram2) {
           uncollapseFor2();
