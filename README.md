@@ -34,6 +34,9 @@ Clone the repository into your Drupal modules folder or install with Composer. E
 - `startExpanded` an Array[String] which correspond to nodes which should be expanded initially
 - `startExpandedIds` a 2D array to allow custom behavior of expanding a node but only making a specific node visible
     - Each entry contains two strings, one of the node to expand, one of the union corresponding to the node you wish to make visible
+- `startX` an Integer multiplier, corresponding to the starting x coordinate of the root node. Formula is screen width * `startX`
+- `startY` similar but for y coordinates
+
 ### Network
 - `nodes` An array of dictionaries 
     - `id` Integer
