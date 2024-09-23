@@ -1,14 +1,13 @@
 {
-    "name": "your-vendor/data_viz",
-    "description": "DataViz",
+    "name": "drupal/data_viz",
+    "description": "A visualization of Network and Kinship diagrams given a JSON file.",
     "type": "drupal-module",
-    "require": {
-      "drupal/core": "^8.8 || ^9 || ^10 || ^11"
-    },
-    "extra": {
-      "drupal-libraries": [
-        "data_viz"
-      ]
-    }
-  }
-  
+    "license": "GPL-3.0",
+    "authors": [
+        {
+            "name": "homura163",
+            "email": "niclouie@outlook.com"
+        }
+    ],
+    "require": {}
+}
