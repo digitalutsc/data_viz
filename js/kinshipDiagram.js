@@ -50,6 +50,10 @@ function showKinshipDiagram(treeData) {
         };
 
         let startExpanded = data.startExpanded ? data.startExpanded : [];
+        let startExpandedIds = data.startExpandedIds ? data.startExpandedIds : [];
+        let startXModifier = data.startX ? data.startX : -1;
+        let startYModifier = data.startY ? data.startY : -1;
+
 
         // mark unions
         for (var k in data.unions) {
@@ -156,24 +160,26 @@ function showKinshipDiagram(treeData) {
         // declare a dag layout
         var tree = d3
           .sugiyama()
-          .layering(d3.layeringLongestPath())
-          // .nodeSize([40, 100])
+          // .layering(d3.layeringLongestPath())
+          // .nodeSize([40, 140])
           .nodeSize([y_sep, x_sep])
+          // .decross(d3.decrossDfs())
           .coord(d3.coordGreedy());
+          // .gap([1, 1]);
           // .coord(d3.coordQuad().linkCurve(1).nodeCurve(1).vertStrong(0).vertWeak(1));
           // .gap([0.1, 0.1]);
           // removed separation as its no longer supported in d3-dag v1.1
 
 
         // make dag from edge list
-        dag = d3.graphConnect()(data.links); // this used to be d3.dagConnect() but it's now d3.graphConnect()
+        let dag = d3.graphConnect()(data.links); // this used to be d3.dagConnect() but it's now d3.graphConnect()
 
 
         // in order to make the family tree work, the dag
         // must be a node with id undefined. create that node if
         // not done automaticaly
         if (dag.id != undefined) {
-          root = dag.copy();
+          root = dag.copy(); // 2024-09 not sure if this is still a valid method on the updated library but no error is being thrown as of yet
           root.id = undefined;
           root.children_copy = [dag];
           dag = root;
@@ -235,6 +241,13 @@ function showKinshipDiagram(treeData) {
           root.y0 = screen_height * 0.6;
         }
 
+        if (startXModifier != -1) {
+          root.x0 = startXModifier;
+        }
+        if (startYModifier != -1) {
+          root.y0 = startYModifier;
+        }
+
         // overwrite dag root nodes
         dag.children_copy = [root];
 
@@ -242,6 +255,9 @@ function showKinshipDiagram(treeData) {
         uncollapse(root);
         for (const nodeId of startExpanded) {
           uncollapse(all_nodes.find((n) => n.id == nodeId));
+        }
+        for (const pair of startExpandedIds) {
+          uncollapseById(all_nodes.find((n) => n.id == pair[0]), undefined, pair[1]);
         }
 
         if (data.start == kinDiagram1) {
@@ -265,7 +281,7 @@ function showKinshipDiagram(treeData) {
 
           //uncollapse(all_nodes.find(n => n.id == "I0079"));
           // For ticket #9413, unique implementation of uncollapse function for Natalie requested to showing Marcantonio's two wifes
-          uncollapseI0097(all_nodes.find((n) => n.id == "I0079"));
+          uncollapseById(all_nodes.find((n) => n.id == "I0079"), undefined, "F0031");
 
           uncollapse(all_nodes.find((n) => n.id == "I0081"));
           uncollapse(all_nodes.find((n) => n.id == "I0102"));
@@ -338,12 +354,12 @@ function showKinshipDiagram(treeData) {
          * @param d
          * @param make_roots
          */
-        function uncollapseI0097(d, make_roots) {
+        function uncollapseById(d, make_roots, id) {
           if (d == undefined) return;
 
           var collapsed_neighbors = d.neighbors.filter((n) => !n.visible);
           collapsed_neighbors.forEach((n) => {
-            if (n.id === "F0031") {
+            if (n.id === id) {
               // collect neighbor data
               n.neighbors = getNeighbors(n);
               // tag visible
