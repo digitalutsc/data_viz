@@ -391,7 +391,6 @@ function showKinshipDiagram(treeData) {
           if (!make_roots) {
             var add_root_nodes = (n) => {
               // add previously inserted root nodes (partners, parents)
-              // this line is throwing too much recursion
               n.inserted_roots.forEach((p) => dag.children_copy.push(p));
               // add previously inserted connections (circles)
               n.inserted_connections.forEach((arr) => {
@@ -627,7 +626,6 @@ function showKinshipDiagram(treeData) {
             .attr("width", 25);
 
           // Add names as node labels
-          // this is causing wrong nodes to be generated... but why?
           nodeEnter
             .append("text")
             .attr("dy", ".35em")
