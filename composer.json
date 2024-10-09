@@ -1,0 +1,13 @@
+{
+    "name": "drupal/data_viz",
+    "description": "A visualization of Network and Kinship diagrams given a JSON file.",
+    "type": "drupal-module",
+    "license": "GPL-3.0",
+    "authors": [
+        {
+            "name": "homura163",
+            "email": "niclouie@outlook.com"
+        }
+    ],
+    "require": {}
+}
